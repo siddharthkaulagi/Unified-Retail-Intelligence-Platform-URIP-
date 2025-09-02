@@ -1,0 +1,6 @@
+$ cd /workspace/streamlit_template
+$ mkdir -p pages utils
+
+$ pnpm install
+
+ ERR_PNPM_NO_PKG_MANIFEST  No package.json found in /workspace/streamlit_template

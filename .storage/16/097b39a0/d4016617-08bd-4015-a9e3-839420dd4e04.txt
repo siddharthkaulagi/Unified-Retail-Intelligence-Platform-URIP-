@@ -1,0 +1,186 @@
+$ cd /workspace/streamlit_template
+$ mkdir -p pages utils
+
+$ pnpm install
+
+ ERR_PNPM_NO_PKG_MANIFEST  No package.json found in /workspace/streamlit_template
+$ pip install -r requirements.txt
+
+Collecting streamlit==1.28.1
+  Downloading streamlit-1.28.1-py2.py3-none-any.whl (8.4 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.4/8.4 MB 86.4 MB/s eta 0:00:00
+Collecting plotly==5.17.0
+  Downloading plotly-5.17.0-py2.py3-none-any.whl (15.6 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 15.6/15.6 MB 39.1 MB/s eta 0:00:00
+Collecting pandas==2.1.3
+  Downloading pandas-2.1.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.3/12.3 MB 114.6 MB/s eta 0:00:00
+Collecting numpy==1.24.3
+  Downloading numpy-1.24.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (17.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 17.3/17.3 MB 107.5 MB/s eta 0:00:00
+Requirement already satisfied: scikit-learn==1.3.2 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from -r requirements.txt (line 5)) (1.3.2)
+Collecting lightgbm==4.1.0
+  Downloading lightgbm-4.1.0-py3-none-manylinux_2_28_x86_64.whl (3.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.1/3.1 MB 101.1 MB/s eta 0:00:00
+Collecting prophet==1.1.4
+  Downloading prophet-1.1.4-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.0/13.0 MB 126.7 MB/s eta 0:00:00
+Collecting openpyxl==3.1.2
+  Downloading openpyxl-3.1.2-py2.py3-none-any.whl (249 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 250.0/250.0 kB 22.6 MB/s eta 0:00:00
+Collecting streamlit-authenticator==0.2.3
+  Downloading streamlit-authenticator-0.2.3.tar.gz (12 kB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting streamlit-option-menu==0.3.6
+  Downloading streamlit_option_menu-0.3.6-py3-none-any.whl (799 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 799.2/799.2 kB 60.4 MB/s eta 0:00:00
+Requirement already satisfied: pydeck<1,>=0.8.0b4 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (0.9.1)
+Requirement already satisfied: typing-extensions<5,>=4.3.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (4.14.0)
+Requirement already satisfied: watchdog>=2.1.5 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (6.0.0)
+Requirement already satisfied: altair<6,>=4.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (5.5.0)
+Requirement already satisfied: tornado<7,>=6.0.3 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (6.5.1)
+Requirement already satisfied: gitpython!=3.1.19,<4,>=3.0.7 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (3.1.40)
+Requirement already satisfied: packaging<24,>=16.8 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (23.0)
+Collecting importlib-metadata<7,>=1.4
+  Downloading importlib_metadata-6.11.0-py3-none-any.whl (23 kB)
+Requirement already satisfied: tenacity<9,>=8.1.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (8.2.3)
+Requirement already satisfied: requests<3,>=2.27 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (2.32.4)
+Collecting pillow<11,>=7.1.0
+  Downloading pillow-10.4.0-cp310-cp310-manylinux_2_28_x86_64.whl (4.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 127.9 MB/s eta 0:00:00
+Requirement already satisfied: cachetools<6,>=4.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (5.5.2)
+Requirement already satisfied: rich<14,>=10.14.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (13.6.0)
+Requirement already satisfied: python-dateutil<3,>=2.7.3 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (2.9.0.post0)
+Requirement already satisfied: pyarrow>=6.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (20.0.0)
+Collecting protobuf<5,>=3.20
+  Downloading protobuf-4.25.8-cp37-abi3-manylinux2014_x86_64.whl (294 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 294.9/294.9 kB 25.8 MB/s eta 0:00:00
+Collecting tzlocal<6,>=1.1
+  Downloading tzlocal-5.3.1-py3-none-any.whl (18 kB)
+Requirement already satisfied: click<9,>=7.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (8.2.1)
+Requirement already satisfied: blinker<2,>=1.0.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (1.9.0)
+Collecting validators<1,>=0.2
+  Downloading validators-0.35.0-py3-none-any.whl (44 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.7/44.7 kB 4.5 MB/s eta 0:00:00
+Requirement already satisfied: toml<2,>=0.10.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit==1.28.1->-r requirements.txt (line 1)) (0.10.2)
+Requirement already satisfied: pytz>=2020.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from pandas==2.1.3->-r requirements.txt (line 3)) (2025.2)
+Requirement already satisfied: tzdata>=2022.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from pandas==2.1.3->-r requirements.txt (line 3)) (2025.2)
+Requirement already satisfied: joblib>=1.1.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from scikit-learn==1.3.2->-r requirements.txt (line 5)) (1.5.1)
+Requirement already satisfied: scipy>=1.5.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from scikit-learn==1.3.2->-r requirements.txt (line 5)) (1.15.3)
+Requirement already satisfied: threadpoolctl>=2.0.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from scikit-learn==1.3.2->-r requirements.txt (line 5)) (3.6.0)
+Requirement already satisfied: tqdm>=4.36.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from prophet==1.1.4->-r requirements.txt (line 7)) (4.66.2)
+Collecting holidays>=0.25
+  Downloading holidays-0.79-py3-none-any.whl (1.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 68.8 MB/s eta 0:00:00
+Collecting convertdate>=2.1.2
+  Downloading convertdate-2.4.0-py3-none-any.whl (47 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 47.9/47.9 kB 5.6 MB/s eta 0:00:00
+Collecting cmdstanpy>=1.0.4
+  Downloading cmdstanpy-1.2.5-py3-none-any.whl (94 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 94.5/94.5 kB 9.0 MB/s eta 0:00:00
+Requirement already satisfied: importlib-resources in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from prophet==1.1.4->-r requirements.txt (line 7)) (6.5.2)
+Collecting LunarCalendar>=0.0.9
+  Downloading LunarCalendar-0.0.9-py2.py3-none-any.whl (18 kB)
+Requirement already satisfied: matplotlib>=2.0.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from prophet==1.1.4->-r requirements.txt (line 7)) (3.10.3)
+Requirement already satisfied: et-xmlfile in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from openpyxl==3.1.2->-r requirements.txt (line 8)) (2.0.0)
+Requirement already satisfied: PyJWT>=2.3.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit-authenticator==0.2.3->-r requirements.txt (line 9)) (2.8.0)
+Requirement already satisfied: bcrypt>=3.1.7 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit-authenticator==0.2.3->-r requirements.txt (line 9)) (4.3.0)
+Requirement already satisfied: PyYAML>=5.3.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from streamlit-authenticator==0.2.3->-r requirements.txt (line 9)) (6.0.1)
+Collecting extra-streamlit-components>=0.1.60
+  Downloading extra_streamlit_components-0.1.81-py3-none-any.whl (2.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.3/2.3 MB 103.3 MB/s eta 0:00:00
+Requirement already satisfied: jinja2 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from altair<6,>=4.0->streamlit==1.28.1->-r requirements.txt (line 1)) (3.1.6)
+Requirement already satisfied: jsonschema>=3.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from altair<6,>=4.0->streamlit==1.28.1->-r requirements.txt (line 1)) (4.24.0)
+Requirement already satisfied: narwhals>=1.14.2 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from altair<6,>=4.0->streamlit==1.28.1->-r requirements.txt (line 1)) (1.44.0)
+Collecting stanio<2.0.0,>=0.4.0
+  Downloading stanio-0.5.1-py3-none-any.whl (8.1 kB)
+Collecting pymeeus<=1,>=0.3.13
+  Downloading PyMeeus-0.5.12.tar.gz (5.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.8/5.8 MB 121.7 MB/s eta 0:00:00
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting extra-streamlit-components>=0.1.60
+  Downloading extra_streamlit_components-0.1.80-py3-none-any.whl (2.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.3/2.3 MB 74.3 MB/s eta 0:00:00
+  Downloading extra_streamlit_components-0.1.71-py3-none-any.whl (4.9 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.9/4.9 MB 108.8 MB/s eta 0:00:00
+Requirement already satisfied: gitdb<5,>=4.0.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from gitpython!=3.1.19,<4,>=3.0.7->streamlit==1.28.1->-r requirements.txt (line 1)) (4.0.12)
+Requirement already satisfied: zipp>=0.5 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from importlib-metadata<7,>=1.4->streamlit==1.28.1->-r requirements.txt (line 1)) (3.23.0)
+Collecting ephem>=3.7.5.3
+  Downloading ephem-4.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 91.0 MB/s eta 0:00:00
+Requirement already satisfied: cycler>=0.10 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from matplotlib>=2.0.0->prophet==1.1.4->-r requirements.txt (line 7)) (0.12.1)
+Requirement already satisfied: fonttools>=4.22.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from matplotlib>=2.0.0->prophet==1.1.4->-r requirements.txt (line 7)) (4.58.4)
+Requirement already satisfied: pyparsing>=2.3.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from matplotlib>=2.0.0->prophet==1.1.4->-r requirements.txt (line 7)) (3.2.3)
+Requirement already satisfied: kiwisolver>=1.3.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from matplotlib>=2.0.0->prophet==1.1.4->-r requirements.txt (line 7)) (1.4.8)
+Requirement already satisfied: contourpy>=1.0.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from matplotlib>=2.0.0->prophet==1.1.4->-r requirements.txt (line 7)) (1.3.2)
+Requirement already satisfied: six>=1.5 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from python-dateutil<3,>=2.7.3->streamlit==1.28.1->-r requirements.txt (line 1)) (1.16.0)
+Requirement already satisfied: certifi>=2017.4.17 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from requests<3,>=2.27->streamlit==1.28.1->-r requirements.txt (line 1)) (2025.6.15)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from requests<3,>=2.27->streamlit==1.28.1->-r requirements.txt (line 1)) (1.26.15)
+Requirement already satisfied: charset_normalizer<4,>=2 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from requests<3,>=2.27->streamlit==1.28.1->-r requirements.txt (line 1)) (2.0.4)
+Requirement already satisfied: idna<4,>=2.5 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from requests<3,>=2.27->streamlit==1.28.1->-r requirements.txt (line 1)) (3.4)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from rich<14,>=10.14.0->streamlit==1.28.1->-r requirements.txt (line 1)) (2.19.1)
+Requirement already satisfied: markdown-it-py>=2.2.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from rich<14,>=10.14.0->streamlit==1.28.1->-r requirements.txt (line 1)) (3.0.0)
+Requirement already satisfied: smmap<6,>=3.0.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from gitdb<5,>=4.0.1->gitpython!=3.1.19,<4,>=3.0.7->streamlit==1.28.1->-r requirements.txt (line 1)) (5.0.2)
+Requirement already satisfied: MarkupSafe>=2.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from jinja2->altair<6,>=4.0->streamlit==1.28.1->-r requirements.txt (line 1)) (3.0.2)
+Requirement already satisfied: jsonschema-specifications>=2023.03.6 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit==1.28.1->-r requirements.txt (line 1)) (2023.7.1)
+Requirement already satisfied: rpds-py>=0.7.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit==1.28.1->-r requirements.txt (line 1)) (0.25.1)
+Requirement already satisfied: attrs>=22.2.0 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit==1.28.1->-r requirements.txt (line 1)) (25.3.0)
+Requirement already satisfied: referencing>=0.28.4 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit==1.28.1->-r requirements.txt (line 1)) (0.30.2)
+Requirement already satisfied: mdurl~=0.1 in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages (from markdown-it-py>=2.2.0->rich<14,>=10.14.0->streamlit==1.28.1->-r requirements.txt (line 1)) (0.1.2)
+Building wheels for collected packages: streamlit-authenticator, pymeeus
+  Building wheel for streamlit-authenticator (setup.py): started
+  Building wheel for streamlit-authenticator (setup.py): finished with status 'done'
+  Created wheel for streamlit-authenticator: filename=streamlit_authenticator-0.2.3-py3-none-any.whl size=10973 sha256=a4ba3f4068486f40c45e8f604a39739ef596befe136e6dbc78a13489cdc1e6ec
+  Stored in directory: /root/.cache/pip/wheels/fa/eb/54/009e28abdb72f6bab333aff4549375b8c89185ea1d6e034109
+  Building wheel for pymeeus (setup.py): started
+  Building wheel for pymeeus (setup.py): finished with status 'done'
+  Created wheel for pymeeus: filename=PyMeeus-0.5.12-py3-none-any.whl size=731999 sha256=289034773e1462a5b4c48b4e9982f887f9bf203b0617c0649c41c123f53b0323
+  Stored in directory: /root/.cache/pip/wheels/d6/67/78/aa2e8d108639dd23a5e9e72a4fc88bb44f5541894382712f48
+Successfully built streamlit-authenticator pymeeus
+Installing collected packages: pymeeus, ephem, validators, tzlocal, protobuf, plotly, pillow, openpyxl, numpy, importlib-metadata, convertdate, stanio, pandas, LunarCalendar, holidays, lightgbm, cmdstanpy, prophet, streamlit, streamlit-option-menu, extra-streamlit-components, streamlit-authenticator
+  Attempting uninstall: protobuf
+    Found existing installation: protobuf 5.29.5
+    Uninstalling protobuf-5.29.5:
+      Successfully uninstalled protobuf-5.29.5
+  Attempting uninstall: plotly
+    Found existing installation: plotly 5.24.1
+    Uninstalling plotly-5.24.1:
+      Successfully uninstalled plotly-5.24.1
+  Attempting uninstall: pillow
+    WARNING: No metadata found in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages
+    Found existing installation: pillow 11.2.1
+    Can't uninstall 'pillow'. No files were found to uninstall.
+  Attempting uninstall: openpyxl
+    WARNING: No metadata found in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages
+    Found existing installation: openpyxl 3.1.5
+    Can't uninstall 'openpyxl'. No files were found to uninstall.
+  Attempting uninstall: numpy
+    WARNING: No metadata found in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages
+    Found existing installation: numpy 2.0.2
+    Can't uninstall 'numpy'. No files were found to uninstall.
+  Attempting uninstall: importlib-metadata
+    WARNING: No metadata found in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages
+    Found existing installation: importlib-metadata 8.4.0
+    Can't uninstall 'importlib-metadata'. No files were found to uninstall.
+  Attempting uninstall: pandas
+    WARNING: No metadata found in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages
+    Found existing installation: pandas 2.1.1
+    Can't uninstall 'pandas'. No files were found to uninstall.
+  Attempting uninstall: streamlit
+    WARNING: No metadata found in /opt/conda/envs/mgx-chat/lib/python3.10/site-packages
+    Found existing installation: streamlit 1.41.1
+    Can't uninstall 'streamlit'. No files were found to uninstall.
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+tensorflow 2.18.0 requires numpy<2.1.0,>=1.26.0, but you have numpy 1.24.3 which is incompatible.
+paddlepaddle 2.4.2 requires protobuf<=3.20.0,>=3.1.0, but you have protobuf 4.25.8 which is incompatible.
+onnx 1.12.0 requires protobuf<=3.20.1,>=3.12.2, but you have protobuf 4.25.8 which is incompatible.
+grpcio-tools 1.48.2 requires protobuf<4.0dev,>=3.12.0, but you have protobuf 4.25.8 which is incompatible.
+albumentations 1.4.24 requires numpy>=1.24.4, but you have numpy 1.24.3 which is incompatible.
+albucore 0.0.23 requires numpy>=1.24.4, but you have numpy 1.24.3 which is incompatible.
+Successfully installed LunarCalendar cmdstanpy convertdate ephem extra-streamlit-components holidays importlib-metadata lightgbm numpy openpyxl pandas pillow plotly prophet protobuf pymeeus stanio streamlit streamlit-authenticator streamlit-option-menu tzlocal validators
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 25.0.1 -> 25.2
+[notice] To update, run: pip install --upgrade pip

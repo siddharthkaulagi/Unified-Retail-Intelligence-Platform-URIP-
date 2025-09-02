@@ -1,0 +1,3 @@
+$ cd /workspace/streamlit_template
+$ mkdir -p pages utils
+
