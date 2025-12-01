@@ -1,0 +1,54 @@
+{
+    "features": {
+        "upload_data": {
+            "enabled": true,
+            "name": "Upload Data",
+            "description": "Upload and validate retail data"
+        },
+        "model_selection": {
+            "enabled": true,
+            "name": "Model Selection",
+            "description": "Select and run forecasting models"
+        },
+        "dashboard": {
+            "enabled": true,
+            "name": "Dashboard",
+            "description": "Interactive analytics dashboard"
+        },
+        "reports": {
+            "enabled": true,
+            "name": "Reports",
+            "description": "Generate and download reports"
+        },
+        "settings": {
+            "enabled": true,
+            "name": "Settings",
+            "description": "User settings and preferences"
+        },
+        "demand_forecasting": {
+            "enabled": true,
+            "name": "Demand Forecasting",
+            "description": "Advanced forecasting features"
+        },
+        "crm_analytics": {
+            "enabled": true,
+            "name": "CRM Analytics",
+            "description": "Customer relationship analytics"
+        },
+        "facility_layout": {
+            "enabled": true,
+            "name": "Facility Layout",
+            "description": "Store layout optimization"
+        },
+        "ai_chatbot": {
+            "enabled": true,
+            "name": "AI Chatbot",
+            "description": "AI-powered assistant"
+        },
+        "store_location_gis": {
+            "enabled": true,
+            "name": "Store Location GIS",
+            "description": "Geographic information system for stores"
+        }
+    }
+}

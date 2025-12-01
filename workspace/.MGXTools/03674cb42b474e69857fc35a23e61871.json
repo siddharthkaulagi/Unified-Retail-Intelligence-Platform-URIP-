@@ -1,0 +1,40 @@
+{
+    "tabs": {
+        "00": {
+            "tab_id": "00",
+            "cwd": "/workspace/streamlit_template",
+            "observer": {
+                "block": "Terminal",
+                "uuid": "d4016617-08bd-4015-a9e3-839420dd4e04",
+                "enable_llm_stream": false,
+                "callback_url": ""
+            },
+            "shell_command": [
+                "bash"
+            ],
+            "command_terminator": "\n"
+        },
+        "01": {
+            "tab_id": "01",
+            "cwd": "/workspace/streamlit_template",
+            "observer": {
+                "block": "Terminal",
+                "uuid": "5865646c-48c9-44a0-85fe-d151ea221d6e",
+                "enable_llm_stream": false,
+                "callback_url": ""
+            },
+            "shell_command": [
+                "bash"
+            ],
+            "command_terminator": "\n"
+        }
+    },
+    "current_tab_id": "01",
+    "forbidden_commands": {
+        "run preview": "Use Deployer.deploy_to_public instead.",
+        "serve ": "Use Deployer.deploy_to_public instead.",
+        "python -m http.server": "Use python -u -m http.server port_number instead."
+    },
+    "timeout": 300.0,
+    "working_dir": "/workspace"
+}

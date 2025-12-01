@@ -1,0 +1,72 @@
+# Core dependencies
+streamlit==1.28.1
+plotly==5.17.0
+pandas==2.1.3
+numpy==1.24.3
+
+# Machine Learning
+scikit-learn==1.3.2
+lightgbm==4.1.0
+xgboost==1.8.6
+prophet==1.1.4
+
+# Deep Learning (for advanced forecasting)
+tensorflow>=2.13.0
+keras>=2.13.0
+torch>=2.0.0
+pytorch-forecasting>=1.0.0
+
+# Advanced ML libraries
+catboost>=1.2.0
+optuna>=3.3.0  # Hyperparameter optimization
+
+# Time Series Specialized
+statsmodels>=0.14.0
+tbats>=1.1.0
+neuralprophet>=0.6.0
+
+# Interpretability
+shap>=0.42.0
+lime>=0.2.0
+
+# Customer Analytics
+lifetimes>=0.11.3  # CLV analysis
+
+# Optimization
+pulp>=2.7.0  # Linear programming
+scipy>=1.11.0
+
+# Visualization Enhancement
+networkx>=3.1  # For relationship charts
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# File handling
+openpyxl==3.1.2
+
+# Authentication & Security
+streamlit-authenticator==0.2.3
+streamlit-option-menu==0.3.6
+bcrypt==4.1.2
+
+# Reporting
+reportlab==4.0.0
+Pillow==10.1.0
+kaleido==0.2.1
+
+# AI Integration
+google-generativeai>=0.3.0  # Install with: pip install google-generativeai
+
+python-docx>=1.1.0
+python-dotenv>=1.0.0
+
+# GIS & Mapping
+streamlit-folium>=0.17.0
+folium>=0.14.0
+geopandas>=0.13.0
+shapely>=2.0.0
+rasterio>=1.3.0
+geopy>=2.4.0
+
+geopandas
+fiona

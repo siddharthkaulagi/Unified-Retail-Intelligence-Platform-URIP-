@@ -1,0 +1,65 @@
+/* Main Application Styling */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+html,
+body,
+[class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Primary Color Theme - Adaptive for Light/Dark mode */
+:root {
+    --primary-color: #0f172a;
+    --secondary-color: #10b981;
+    --accent-color: #3b82f6;
+    --background-light: #f8fafc;
+    --text-dark: #1e293b;
+}
+
+/* Sidebar Styling - Adaptive to Streamlit theme */
+[data-testid="stSidebar"] {
+    background-color: inherit !important;
+}
+
+[data-testid="stSidebar"] * {
+    color: inherit !important;
+}
+
+[data-testid="stSidebar"] .stMarkdown,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span {
+    color: inherit !important;
+}
+
+/* Custom Button Styling */
+div.stButton>button {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+div.stButton>button[kind="primary"] {
+    background: linear-gradient(135deg, var(--secondary-color), #059669);
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1), 0 2px 4px -1px rgba(16, 185, 129, 0.06);
+    color: white !important;
+}
+
+div.stButton>button[kind="primary"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px -1px rgba(16, 185, 129, 0.2);
+}
+
+/* Metric Cards */
+[data-testid="stMetricValue"] {
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
+/* Dataframes */
+[data-testid="stDataFrame"] {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
