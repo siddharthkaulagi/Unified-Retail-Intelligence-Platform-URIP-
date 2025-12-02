@@ -1,17 +1,41 @@
+# workspace/streamlit_template/pages/05_Settings.py
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from pathlib import Path
+
 from utils.ui_components import render_sidebar
 from utils.feature_flags import feature_flags
 
-
-def load_css():
-    with open("assets/custom.css") as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-
-load_css()
+# IMPORTANT: set_page_config must be called before any other Streamlit commands.
 st.set_page_config(page_title="Settings", page_icon="⚙️", layout="wide")
 
+def load_css():
+    """
+    Load CSS relative to this file's location (robust on Streamlit Cloud).
+    pages/05_Settings.py -> parent = pages -> parent.parent = streamlit_template
+    assets/custom.css should be at: streamlit_template/assets/custom.css
+    """
+    css_path = Path(__file__).resolve().parent.parent / "assets" / "custom.css"
+
+    if not css_path.exists():
+        # Do not raise — show a helpful warning in-app and continue.
+        st.info(f"Custom CSS not found at `{css_path}` — continuing without custom styles.")
+        return
+
+    try:
+        with css_path.open("r", encoding="utf-8") as f:
+            css = f.read()
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    except Exception as e:
+        st.warning("Failed to load custom CSS — continuing without it.")
+        # Optionally log exception to console (useful for Streamlit logs)
+        st.write(f"CSS load error: {e}")
+
+# load css after set_page_config
+load_css()
+
+# --- rest of your page ---
 # Check if this feature is enabled
 if not feature_flags.is_enabled('settings'):
     st.warning("⚠️ This feature is currently disabled.")
