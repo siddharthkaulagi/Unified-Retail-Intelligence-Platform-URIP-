@@ -1,19 +1,30 @@
+# workspace/streamlit_template/pages/08_Facility_Layout.py
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 import networkx as nx
+import sys
+import os
+from pathlib import Path
+
+# allow importing utils from parent folder
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from utils.ui_components import render_sidebar
+from utils.load_css import load_css_for_page   # robust shared CSS loader
 
-def load_css():
-    with open("assets/custom.css") as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-
-load_css()
-
-
+# -----------------------------------------------------------
+# IMPORTANT: set_page_config must be the FIRST Streamlit call
+# -----------------------------------------------------------
 st.set_page_config(page_title="Facility Layout", page_icon="🏭", layout="wide")
+
+# Load CSS safely (uses this file's location)
+load_css_for_page(__file__)
+# -----------------------------------------------------------
+
 
 # Check authentication
 if not st.session_state.get('authenticated', False):
@@ -90,7 +101,7 @@ with tab1:
             title="Department Types"
         )
         fig.update_layout(height=300)
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
 
 with tab2:
     st.markdown("### 🔗 Activity Relationship Chart (ARC)")
@@ -110,8 +121,6 @@ with tab2:
         - **X (Undesirable)**: Should be separated (e.g., Office & Noisy Operations)
         """)
 
-
-        
         # Initialize relationship matrix
         dept_names = st.session_state.departments['Name'].tolist()
         n_depts = len(dept_names)
@@ -185,12 +194,9 @@ with tab2:
         
         # Create network graph
         G = nx.Graph()
-        
-        # Add nodes
         for dept in dept_names:
             G.add_node(dept)
         
-        # Add edges with weights
         closeness_weights = {'A': 5, 'E': 4, 'I': 3, 'O': 2, 'U': 1, 'X': 0}
         closeness_colors = {
             'A': 'darkgreen',
@@ -204,7 +210,7 @@ with tab2:
         edges_data = []
         for _, row in st.session_state.relationship_matrix.iterrows():
             weight = closeness_weights.get(row['Closeness'], 1)
-            if weight > 0:  # Don't show X relationships in network
+            if weight > 0:
                 G.add_edge(row['From'], row['To'], weight=weight, closeness=row['Closeness'])
                 edges_data.append({
                     'from': row['From'],
@@ -213,10 +219,8 @@ with tab2:
                     'weight': weight
                 })
         
-        # Layout
         pos = nx.spring_layout(G, k=2, iterations=50)
         
-        # Create plotly figure
         edge_trace = []
         for _, row in st.session_state.relationship_matrix.iterrows():
             if row['Closeness'] != 'X':
@@ -239,7 +243,6 @@ with tab2:
         node_x = []
         node_y = []
         node_text = []
-        
         for node in G.nodes():
             x, y = pos[node]
             node_x.append(x)
@@ -270,7 +273,7 @@ with tab2:
             height=600
         )
         
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
         
         # Summary statistics
         col1, col2, col3 = st.columns(3)
@@ -294,7 +297,6 @@ with tab3:
     if 'departments' not in st.session_state or 'relationship_matrix' not in st.session_state:
         st.warning("Please complete Department Setup and Relationship Matrix first.")
     else:
-        # Configuration
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -311,19 +313,15 @@ with tab3:
         
         if st.button("🎯 Generate Optimal Layout", type="primary"):
             with st.spinner("Optimizing facility layout..."):
-                # Simple grid-based layout algorithm
                 depts = st.session_state.departments.copy()
                 n_depts = len(depts)
                 
-                # Calculate grid dimensions
                 cols = int(np.ceil(np.sqrt(n_depts)))
                 rows = int(np.ceil(n_depts / cols))
                 
-                # Calculate cell dimensions
                 cell_width = facility_width / cols
                 cell_length = facility_length / rows
                 
-                # Assign positions
                 positions = []
                 for idx, row in depts.iterrows():
                     grid_row = idx // cols
@@ -343,7 +341,6 @@ with tab3:
                 st.session_state.layout_positions = pd.DataFrame(positions)
                 st.success("Layout generated successfully!")
         
-        # Display layout
         if 'layout_positions' in st.session_state:
             st.markdown("#### Optimized Layout Visualization")
             
@@ -359,7 +356,6 @@ with tab3:
             
             # Draw departments
             for _, dept in st.session_state.layout_positions.iterrows():
-                # Rectangle for department
                 fig.add_shape(
                     type="rect",
                     x0=dept['X'] - dept['Width']/2,
@@ -371,7 +367,6 @@ with tab3:
                     opacity=0.7
                 )
                 
-                # Label
                 fig.add_annotation(
                     x=dept['X'],
                     y=dept['Y'],
@@ -404,7 +399,7 @@ with tab3:
                         y=[from_pos.iloc[0]['Y'], to_pos.iloc[0]['Y']],
                         mode='lines',
                         line=dict(
-                            color=closeness_colors[rel['Closeness']],
+                            color=closeness_colors.get(rel['Closeness'], 'lightgray'),
                             width=1,
                             dash='dot'
                         ),
@@ -421,12 +416,11 @@ with tab3:
                 showlegend=False
             )
             
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
             
             # Layout score
             st.markdown("#### Layout Quality Metrics")
             
-            # Calculate layout score based on relationships
             closeness_scores = {'A': 10, 'E': 8, 'I': 6, 'O': 4, 'U': 2, 'X': -10}
             total_score = 0
             max_possible_score = 0
@@ -440,28 +434,23 @@ with tab3:
                 ]
                 
                 if len(from_pos) > 0 and len(to_pos) > 0:
-                    # Calculate distance
                     distance = np.sqrt(
                         (from_pos.iloc[0]['X'] - to_pos.iloc[0]['X'])**2 +
                         (from_pos.iloc[0]['Y'] - to_pos.iloc[0]['Y'])**2
                     )
                     
-                    # Score: higher closeness rating should have lower distance
-                    importance = closeness_scores[rel['Closeness']]
+                    importance = closeness_scores.get(rel['Closeness'], 0)
                     max_possible_score += abs(importance) * 100
                     
                     if importance > 0:
-                        # Closer is better for positive relationships
                         score = importance * (1 / (1 + distance / 10))
                     elif importance < 0:
-                        # Further is better for negative relationships
                         score = abs(importance) * (distance / 100)
                     else:
                         score = 0
                     
                     total_score += score
             
-            # Display score
             col1, col2, col3 = st.columns(3)
             
             with col1:
@@ -486,12 +475,10 @@ with tab4:
         st.markdown("#### Material Flow Matrix")
         st.info("Define the volume of material/product flow between departments")
         
-        # Initialize flow matrix
         dept_names = st.session_state.departments['Name'].tolist()
         n_depts = len(dept_names)
         
         if 'flow_matrix' not in st.session_state:
-            # Create default flow matrix (from-to chart)
             flow_data = []
             for from_dept in dept_names:
                 for to_dept in dept_names:
@@ -504,7 +491,6 @@ with tab4:
                         })
             st.session_state.flow_matrix = pd.DataFrame(flow_data)
         
-        # Edit flow matrix
         edited_flow = st.data_editor(
             st.session_state.flow_matrix,
             width='stretch',
@@ -528,14 +514,11 @@ with tab4:
             st.session_state.flow_matrix = edited_flow
             st.success("Flow data updated successfully!")
         
-        # Visualize flow
         if st.session_state.flow_matrix['Flow Volume'].sum() > 0:
             st.markdown("#### Material Flow Diagram")
             
-            # Create Sankey diagram
             flow_df = st.session_state.flow_matrix[st.session_state.flow_matrix['Flow Volume'] > 0]
             
-            # Prepare data for Sankey
             all_nodes = list(set(flow_df['From'].tolist() + flow_df['To'].tolist()))
             node_dict = {node: idx for idx, node in enumerate(all_nodes)}
             
@@ -560,12 +543,10 @@ with tab4:
                 height=500
             )
             
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
             
-            # Flow statistics
             st.markdown("#### Flow Statistics")
             
-            # Incoming and outgoing flow per department
             incoming = flow_df.groupby('To')['Flow Volume'].sum().reset_index()
             incoming.columns = ['Department', 'Incoming Flow']
             
@@ -575,26 +556,23 @@ with tab4:
             flow_stats = pd.merge(incoming, outgoing, on='Department', how='outer').fillna(0)
             flow_stats['Net Flow'] = flow_stats['Outgoing Flow'] - flow_stats['Incoming Flow']
             
-            st.dataframe(flow_stats, width='stretch')
+            st.dataframe(flow_stats, use_container_width=True)
             
-            # Identify bottlenecks
             col1, col2 = st.columns(2)
             
             with col1:
                 st.markdown("#### Top Flow Connections")
                 top_flows = flow_df.nlargest(5, 'Flow Volume')[['From', 'To', 'Flow Volume']]
-                st.dataframe(top_flows, width='stretch')
+                st.dataframe(top_flows, use_container_width=True)
             
             with col2:
                 st.markdown("#### Potential Bottlenecks")
-                # Departments with high incoming flow
                 bottlenecks = flow_stats.nlargest(3, 'Incoming Flow')
                 for _, dept in bottlenecks.iterrows():
                     st.warning(f"**{dept['Department']}**: High incoming flow ({dept['Incoming Flow']:.0f} units/day)")
         else:
             st.info("No flow data entered yet. Add flow volumes between departments to see analysis.")
         
-        # Optimization recommendations
         st.markdown("#### 💡 Optimization Recommendations")
         
         if 'layout_positions' in st.session_state and st.session_state.flow_matrix['Flow Volume'].sum() > 0:
