@@ -1,3 +1,5 @@
+# workspace/streamlit_template/pages/07_CRM_Analytics.py
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -6,15 +8,23 @@ import plotly.graph_objects as go
 import plotly.express as px
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
+import sys
+import os
+
+# allow importing utils from parent folder
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from utils.ui_components import render_sidebar
+from utils.load_css import load_css_for_page   # shared loader (robust)
 
-def load_css():
-    with open("assets/custom.css") as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-
-load_css()
-
+# -----------------------------------------------------------
+# IMPORTANT: set_page_config must be the first Streamlit call
+# -----------------------------------------------------------
 st.set_page_config(page_title="CRM Analytics", page_icon="🤝", layout="wide")
+
+# load css safely (no FileNotFoundError)
+load_css_for_page(__file__)
+# -----------------------------------------------------------
 
 # Check authentication
 if not st.session_state.get('authenticated', False):
@@ -34,7 +44,7 @@ if 'uploaded_data' not in st.session_state and 'processed_data' not in st.sessio
     st.stop()
 
 # Get data
-df = st.session_state.get('processed_data', st.session_state.get('uploaded_data'))
+df = st.session_state.get('processed_data', st.session_state.get('uploaded_data')).copy()
 
 # Main tabs - Reorganized for better UX
 tab1, tab2, tab3, tab4 = st.tabs([
@@ -95,7 +105,7 @@ with tab1:
                     title="Distribution of Customer Total Value",
                     labels={'Total_Value': 'Customer Lifetime Value (₹)'}
                 )
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
             
             with col2:
                 # Top customers
@@ -107,7 +117,7 @@ with tab1:
                     title="Top 10 Customers by Value",
                     labels={'Customer_ID': 'Customer ID', 'Total_Value': 'Total Value (₹)'}
                 )
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
         
         # Customer cohort analysis
         if 'Date' in df.columns and 'Sales' in df.columns:
@@ -134,7 +144,7 @@ with tab1:
                 title="Monthly Customer Acquisition",
                 markers=True
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("Customer ID column not found. Please add a 'Customer_ID' column to your dataset for customer analytics.")
 
@@ -230,7 +240,7 @@ with tab2:
         
         with col3:
             avg_monetary = rfm['Monetary'].mean()
-            st.metric("Avg Monetary", f"${avg_monetary:,.0f}")
+            st.metric("Avg Monetary", f"₹{avg_monetary:,.0f}")
         
         # Segment distribution
         st.markdown("#### Customer Segments")
@@ -248,7 +258,7 @@ with tab2:
                 title="Customer Segment Distribution",
                 color_discrete_sequence=px.colors.qualitative.Set3
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
         
         with col2:
             segment_value = rfm.groupby('Segment')['Monetary'].sum().reset_index()
@@ -261,7 +271,7 @@ with tab2:
                 title="Total Value by Segment",
                 color='Segment'
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
         
         # RFM scatter plot
         st.markdown("#### RFM Analysis - Recency vs Monetary")
@@ -280,7 +290,7 @@ with tab2:
             },
             hover_data=['Customer_ID', 'RFM_Score']
         )
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
         
         # Detailed segment info
         st.markdown("#### Segment Details")
@@ -295,7 +305,7 @@ with tab2:
         
         segment_details.columns = ['Segment', 'Count', 'Avg Recency (days)', 'Avg Frequency', 'Avg Monetary (₹)', 'Avg RFM Score']
         
-        st.dataframe(segment_details, width='stretch')
+        st.dataframe(segment_details, use_container_width=True)
         
         # Download RFM data
         csv = rfm.to_csv(index=False)
@@ -371,7 +381,7 @@ with tab2:
             
             cluster_stats.columns = ['Segment', 'Customers', 'Avg Total Sales', 'Avg Per-Purchase', 'Avg Purchases']
             
-            st.dataframe(cluster_stats, width='stretch')
+            st.dataframe(cluster_stats, use_container_width=True)
             
             # Visualization
             col1, col2 = st.columns(2)
@@ -390,7 +400,7 @@ with tab2:
                         'Cluster': 'Segment'
                     }
                 )
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
             
             with col2:
                 cluster_size = seg_results['Cluster'].value_counts().reset_index()
@@ -402,7 +412,7 @@ with tab2:
                     names='Segment',
                     title="Customer Distribution Across Segments"
                 )
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("Customer data not available for segmentation.")
 
@@ -469,7 +479,7 @@ with tab3:
                 title="Distribution of Predicted 3-Year CLV",
                 labels={'Predicted_3Year_CLV': 'Predicted 3-Year CLV (₹)'}
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
         
         with col2:
             # Top customers by CLV
@@ -481,13 +491,13 @@ with tab3:
                 title="Top 10 Customers by Predicted CLV",
                 labels={'Customer_ID': 'Customer ID', 'Predicted_3Year_CLV': 'Predicted 3-Year CLV (₹)'}
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
         
         # CLV segments
         st.markdown("#### CLV-Based Customer Segments")
         
         customer_lifetime['CLV_Segment'] = pd.qcut(
-            customer_lifetime['Predicted_3Year_CLV'],
+            customer_lifetime['Predicted_3Year_CLV'].fillna(0),
             q=4,
             labels=['Low Value', 'Medium Value', 'High Value', 'Very High Value']
         )
@@ -500,7 +510,7 @@ with tab3:
         
         clv_segment_stats.columns = ['Segment', 'Customer Count', 'Current Total Value', 'Avg Predicted CLV']
         
-        st.dataframe(clv_segment_stats, width='stretch')
+        st.dataframe(clv_segment_stats, use_container_width=True)
         
         # Scatter plot: Purchase Frequency vs CLV
         fig = px.scatter(
@@ -515,7 +525,7 @@ with tab3:
                 'Predicted_3Year_CLV': 'Predicted 3-Year CLV (₹)'
             }
         )
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("Required data not available for CLV calculation.")
 
@@ -569,7 +579,7 @@ with tab4:
             st.metric("Low Risk Customers", f"{low_risk}")
         
         with col4:
-            churn_rate = (high_risk / len(churn_data)) * 100
+            churn_rate = (high_risk / len(churn_data)) * 100 if len(churn_data) > 0 else 0
             st.metric("Churn Risk Rate", f"{churn_rate:.1f}%")
         
         # Visualizations
@@ -591,7 +601,7 @@ with tab4:
                     'High Risk': 'red'
                 }
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
         
         with col2:
             fig = px.scatter(
@@ -611,7 +621,7 @@ with tab4:
                     'High Risk': 'red'
                 }
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
         
         # High-risk customers
         st.markdown("#### High-Risk Customers Requiring Attention")
@@ -620,7 +630,7 @@ with tab4:
         
         st.dataframe(
             high_risk_customers[['Customer_ID', 'Days_Since_Purchase', 'Total_Sales', 'Purchase_Count']],
-            width='stretch'
+            use_container_width=True
         )
         
         # Retention strategies
