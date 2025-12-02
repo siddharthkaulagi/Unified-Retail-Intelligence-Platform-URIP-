@@ -1,3 +1,5 @@
+# workspace/streamlit_template/pages/09_AI_Chatbot.py
+
 import streamlit as st
 import pandas as pd
 import os
@@ -10,29 +12,17 @@ import plotly.graph_objects as go
 import json
 from typing import Dict, List, Optional, Tuple, Any
 from functools import lru_cache
+import sys
 
-# Import our Gemini AI classes
+# allow importing utils from parent folder
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from utils.ui_components import render_sidebar as render_global_sidebar
+from utils.load_css import load_css_for_page   # robust shared loader
 
-def load_css():
-    with open("assets/custom.css") as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-
-load_css()
-try:
-    from utils.gemini_ai import GeminiChatbot, GeminiAIAssistant
-    GEMINI_AVAILABLE = True
-except ImportError:
-    GEMINI_AVAILABLE = False
-    st.error("Gemini AI not available. Please install google-generativeai package.")
-
-# Constants
-MAX_CHAT_HISTORY = 100
-MAX_IMAGE_SIZE = (800, 600)
-SUPPORTED_IMAGE_TYPES = ['png', 'jpg', 'jpeg', 'gif', 'bmp']
-VISUALIZATION_TYPES = ["forecast_trends", "category_comparison", "seasonal_pattern"]
-
-# Page configuration
+# -----------------------------------------------------------
+# IMPORTANT: set_page_config must be the FIRST Streamlit call
+# -----------------------------------------------------------
 st.set_page_config(
     page_title="AI Chatbot - Retail Forecasting",
     page_icon="🤖",
@@ -40,7 +30,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for modern chat interface
+# Load CSS file (robust, resolves relative to this file)
+load_css_for_page(__file__)
+
+# Custom inline CSS for modern chat interface (still okay after set_page_config)
 st.markdown("""
 <style>
     .chat-container {
@@ -123,6 +116,24 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
+# Import Gemini AI classes after set_page_config so Streamlit calls are allowed here
+try:
+    from utils.gemini_ai import GeminiChatbot, GeminiAIAssistant
+    GEMINI_AVAILABLE = True
+except Exception:
+    GEMINI_AVAILABLE = False
+    # Defer user-facing errors to runtime (don't call st.error at import-time outside app flow)
+    # We'll show a warning during initialization if Gemini isn't available.
+
+
+# Constants
+MAX_CHAT_HISTORY = 100
+MAX_IMAGE_SIZE = (800, 600)
+SUPPORTED_IMAGE_TYPES = ['png', 'jpg', 'jpeg', 'gif', 'bmp']
+VISUALIZATION_TYPES = ["forecast_trends", "category_comparison", "seasonal_pattern"]
+
+
 def initialize_chatbot() -> bool:
     """Initialize the chatbot if not already done"""
     if 'chatbot' not in st.session_state:
@@ -149,6 +160,7 @@ def initialize_chatbot() -> bool:
             return False
     return st.session_state.chatbot is not None
 
+
 def validate_image_file(uploaded_file) -> Tuple[bool, Optional[Image.Image], str]:
     """Validate uploaded image file"""
     if uploaded_file is None:
@@ -170,6 +182,7 @@ def validate_image_file(uploaded_file) -> Tuple[bool, Optional[Image.Image], str
     except Exception as e:
         return False, None, f"Error processing image: {str(e)}"
 
+
 def manage_chat_history(chat_history: List[Dict]) -> List[Dict]:
     """Manage chat history size and cleanup"""
     if len(chat_history) > MAX_CHAT_HISTORY:
@@ -177,6 +190,7 @@ def manage_chat_history(chat_history: List[Dict]) -> List[Dict]:
         return chat_history[-MAX_CHAT_HISTORY:]
 
     return chat_history
+
 
 def display_chat_message(message: str, is_user: bool = True, image: Optional[Image.Image] = None) -> None:
     """Display a chat message in the UI"""
@@ -198,6 +212,7 @@ def display_chat_message(message: str, is_user: bool = True, image: Optional[Ima
                 <strong>🤖 AI Assistant:</strong><br>{message}
             </div>
             """, unsafe_allow_html=True)
+
 
 @lru_cache(maxsize=10)
 def get_sample_data(data_type: str) -> Optional[pd.DataFrame]:
@@ -222,6 +237,7 @@ def get_sample_data(data_type: str) -> Optional[pd.DataFrame]:
     except Exception as e:
         st.error(f"Error generating sample data: {e}")
     return None
+
 
 def create_visualization(data_type: str, data: Optional[pd.DataFrame] = None) -> Optional[go.Figure]:
     """Create visualizations based on data type with improved error handling"""
@@ -284,6 +300,7 @@ def create_visualization(data_type: str, data: Optional[pd.DataFrame] = None) ->
         st.error(f"❌ Error creating visualization: {e}")
     return None
 
+
 def get_fallback_response(message: str) -> str:
     """Provide fallback responses when AI is not available"""
     message_lower = message.lower()
@@ -304,8 +321,7 @@ def get_fallback_response(message: str) -> str:
         **Local & Fresh:** Demand for locally sourced and fresh products remains strong.
 
         *💡 Tip: Upload your sales data to get specific trend analysis for your business.*
-        """
-
+    """
     elif any(word in message_lower for word in ['forecast', 'predict', 'future']):
         response = """
         🔮 **Sales Forecasting Best Practices:**
@@ -329,7 +345,6 @@ def get_fallback_response(message: str) -> str:
 
         *📊 Use the Model Selection page to try different forecasting algorithms.*
         """
-
     elif any(word in message_lower for word in ['seasonal', 'pattern', 'cycle']):
         response = """
         🌊 **Seasonal Sales Patterns:**
@@ -352,7 +367,6 @@ def get_fallback_response(message: str) -> str:
 
         *📈 Check the Dashboard page to visualize seasonal patterns in your data.*
         """
-
     elif any(word in message_lower for word in ['inventory', 'stock', 'supply']):
         response = """
         📦 **Inventory Management Strategies:**
@@ -376,7 +390,6 @@ def get_fallback_response(message: str) -> str:
 
         *⚙️ Visit the Settings page to configure inventory parameters.*
         """
-
     elif any(word in message_lower for word in ['accuracy', 'improve', 'better']):
         response = """
         🎯 **Improving Forecast Accuracy:**
@@ -401,7 +414,6 @@ def get_fallback_response(message: str) -> str:
 
         *📊 The Dashboard shows forecast accuracy metrics for your models.*
         """
-
     else:
         response = f"""
         🤖 **AI Assistant Currently Unavailable**
@@ -425,8 +437,8 @@ def get_fallback_response(message: str) -> str:
 
         💡 **Tip:** The AI features will be restored once API limits are reset. In the meantime, explore the forecasting models available in the application!
         """
-
     return response
+
 
 def detect_visualization_type(message: str) -> Optional[str]:
     """Detect which type of visualization to show based on message content"""
@@ -441,17 +453,18 @@ def detect_visualization_type(message: str) -> Optional[str]:
 
     return None
 
+
 def render_local_actions() -> None:
     """Render the sidebar with quick actions and sample questions"""
     st.markdown("### 🚀 Quick Actions")
 
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("📊 Forecast\nAnalysis", width='stretch'):
+        if st.button("📊 Forecast\nAnalysis", key="qa_forecast"):
             st.session_state.quick_action_message = "Analyze my recent forecast data and provide insights"
             st.rerun()
     with col2:
-        if st.button("📈 Trend\nAnalysis", width='stretch'):
+        if st.button("📈 Trend\nAnalysis", key="qa_trend"):
             st.session_state.quick_action_message = "Show me current retail sales trends"
             st.rerun()
 
@@ -473,26 +486,26 @@ def render_local_actions() -> None:
     st.markdown("---")
 
     # Clear chat
-    if st.button("🗑️ Clear Chat", type="secondary"):
+    if st.button("🗑️ Clear Chat", type="secondary", key="clear_chat"):
         st.session_state.chat_history = []
-        if 'chatbot' in st.session_state:
-            st.session_state.chatbot.clear_conversation()
+        if 'chatbot' in st.session_state and st.session_state.chatbot:
+            try:
+                st.session_state.chatbot.clear_conversation()
+            except Exception:
+                pass
         st.rerun()
 
-    st.caption(f"💬 Messages: {len(st.session_state.chat_history)}")
+    st.caption(f"💬 Messages: {len(st.session_state.chat_history) if 'chat_history' in st.session_state else 0}")
+
 
 def render_chat_history() -> None:
     """Render the chat history with messages and visualizations"""
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-    if st.session_state.chat_history:
+    if st.session_state.get('chat_history'):
         for i, chat_item in enumerate(st.session_state.chat_history):
             display_chat_message(chat_item['user'], True, chat_item.get('image'))
             display_chat_message(chat_item['bot'], is_user=False)
-
-            # Add visual elements based on response content
-            # Only show if explicitly requested or if data is available (removed automatic sample graph)
-            pass
     else:
         st.markdown("""
         <div style='text-align: center; padding: 50px; color: #666;'>
@@ -504,12 +517,9 @@ def render_chat_history() -> None:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
+
 def render_input_area() -> Tuple[str, bool]:
     """Render the input area with file upload and chat input"""
-    # Modern input area (fixed at bottom)
-    st.markdown("""
-    """, unsafe_allow_html=True)
-
     # Chat input
     col1, col2, col3 = st.columns([4, 1, 1])
 
@@ -522,13 +532,14 @@ def render_input_area() -> Tuple[str, bool]:
         )
 
     with col2:
-        send_button = st.button("🚀 Send", width='stretch', type="primary")
+        send_button = st.button("🚀 Send", key="send_button", type="primary")
 
     with col3:
-        if st.button("🖼️", help="Upload image for analysis"):
+        if st.button("🖼️", key="upload_button", help="Upload image for analysis"):
             st.session_state.show_image_upload = True
 
     return chat_input, send_button
+
 
 def handle_chat_input(chat_input: str, send_button: bool) -> None:
     """Handle chat input and AI responses"""
@@ -537,8 +548,8 @@ def handle_chat_input(chat_input: str, send_button: bool) -> None:
         chat_input = st.session_state.quick_action_message
         st.session_state.quick_action_message = None
         send_button = True
-    
-    if send_button and chat_input.strip():
+
+    if send_button and chat_input and chat_input.strip():
         # Manage chat history size
         if 'chat_history' not in st.session_state:
             st.session_state.chat_history = []
@@ -556,7 +567,7 @@ def handle_chat_input(chat_input: str, send_button: bool) -> None:
         # Get AI response or fallback
         with st.spinner("🤖 Thinking..."):
             try:
-                if st.session_state.chatbot is None:
+                if st.session_state.get('chatbot') is None:
                     # Fallback responses when AI is not available
                     fallback_response = get_fallback_response(chat_input)
                     st.session_state.chat_history[-1]['bot'] = fallback_response
@@ -566,7 +577,6 @@ def handle_chat_input(chat_input: str, send_button: bool) -> None:
                         st.session_state.uploaded_image,
                         chat_input
                     )
-                    # Clear uploaded image after use
                     st.session_state.uploaded_image = None
 
                     if response and response.get('success', False):
@@ -577,7 +587,7 @@ def handle_chat_input(chat_input: str, send_button: bool) -> None:
                 else:
                     response = st.session_state.chatbot.chat(chat_input)
 
-                    if response and response.get('success', False):
+                    if response and (response.get('success', False) or response.get('response')):
                         # Update the last message with actual response
                         st.session_state.chat_history[-1]['bot'] = response.get('analysis', response.get('response', 'No response'))
                     else:
@@ -589,8 +599,12 @@ def handle_chat_input(chat_input: str, send_button: bool) -> None:
 
         st.rerun()
 
+
 def handle_image_upload() -> None:
     """Handle image upload and validation"""
+    if not st.session_state.get('show_image_upload', False):
+        return
+
     uploaded_file = st.file_uploader(
         label="Choose an image file",
         type=SUPPORTED_IMAGE_TYPES,
@@ -609,6 +623,7 @@ def handle_image_upload() -> None:
             st.success(f"✅ {message}")
         else:
             st.error(f"❌ {message}")
+
 
 def render_auto_scroll() -> None:
     """Render JavaScript for auto-scrolling chat"""
@@ -632,6 +647,7 @@ def render_auto_scroll() -> None:
     </script>
     """, unsafe_allow_html=True)
 
+
 def render_ai_analyzer():
     """Render the AI Analyzer section for document analysis"""
     st.markdown("### 📄 AI Document Analyzer")
@@ -654,7 +670,7 @@ def render_ai_analyzer():
         with col2:
             st.metric("File Type", uploaded_file.type or "Unknown")
         with col3:
-            if st.button("🗑️ Clear File"):
+            if st.button("🗑️ Clear File", key="clear_file"):
                 st.rerun()
 
         # Analysis options
@@ -663,20 +679,20 @@ def render_ai_analyzer():
         analysis_type = st.selectbox(
             "Analysis Type",
             [
-                " Comprehensive Business Analysis",
-                " Sales Trend Analysis",
-                " Inventory Optimization",
-                " Performance Insights",
-                " Predictive Insights",
-                " Strategic Recommendations"
+                " 📊 Comprehensive Business Analysis",
+                " 📈 Sales Trend Analysis",
+                " 📦 Inventory Optimization",
+                " 🎯 Performance Insights",
+                " 🔮 Predictive Insights",
+                " 💼 Strategic Recommendations"
             ]
         )
 
         include_visualizations = st.checkbox("Include Data Visualizations", value=True)
         analysis_depth = st.selectbox("Analysis Depth", ["Quick Overview", "Detailed Analysis", "Comprehensive Report"])
 
-        if st.button("🚀 Analyze Document", type="primary"):
-            if not GEMINI_AVAILABLE or st.session_state.chatbot is None:
+        if st.button("🚀 Analyze Document", type="primary", key="analyze_doc"):
+            if not GEMINI_AVAILABLE or st.session_state.get('chatbot') is None:
                 st.warning("⚠️ AI Document Analysis is currently unavailable due to API quota limits. Core forecasting features are still available.")
                 st.info("💡 **Alternative:** Use the core forecasting models on the Model Selection page to analyze your data.")
                 return
@@ -722,18 +738,21 @@ def render_ai_analyzer():
                         file_content = "Text file content"
 
                     # Clean up temporary file
-                    os.unlink(tmp_file_path)
+                    try:
+                        os.unlink(tmp_file_path)
+                    except Exception:
+                        pass
 
                     # Perform AI analysis
                     if file_content and len(file_content.strip()) > 0:
                         # Create context-aware prompt based on analysis type
                         analysis_prompts = {
-                            "📊 Comprehensive Business Analysis": "Provide a comprehensive business analysis including market trends, competitive insights, and strategic recommendations.",
-                            "📈 Sales Trend Analysis": "Analyze sales trends, patterns, and forecasting accuracy from the data.",
-                            "📦 Inventory Optimization": "Focus on inventory management, stock optimization, and supply chain recommendations.",
-                            "🎯 Performance Insights": "Provide performance insights, KPIs analysis, and improvement recommendations.",
-                            "🔮 Predictive Insights": "Generate predictive insights and future trend analysis.",
-                            "💼 Strategic Recommendations": "Focus on strategic business recommendations and long-term planning."
+                            " 📊 Comprehensive Business Analysis": "Provide a comprehensive business analysis including market trends, competitive insights, and strategic recommendations.",
+                            " 📈 Sales Trend Analysis": "Analyze sales trends, patterns, and forecasting accuracy from the data.",
+                            " 📦 Inventory Optimization": "Focus on inventory management, stock optimization, and supply chain recommendations.",
+                            " 🎯 Performance Insights": "Provide performance insights, KPIs analysis, and improvement recommendations.",
+                            " 🔮 Predictive Insights": "Generate predictive insights and future trend analysis.",
+                            " 💼 Strategic Recommendations": "Focus on strategic business recommendations and long-term planning."
                         }
 
                         base_prompt = analysis_prompts.get(analysis_type, "Provide comprehensive analysis of this document.")
@@ -766,7 +785,7 @@ def render_ai_analyzer():
                         st.session_state.document_analysis = {
                             'file_name': uploaded_file.name,
                             'analysis_type': analysis_type,
-                            'analysis': response.get('response', 'No analysis available'),
+                            'analysis': response.get('response', 'No analysis available') if response else 'No analysis available',
                             'timestamp': datetime.now().isoformat()
                         }
 
@@ -821,7 +840,7 @@ def render_ai_analyzer():
                     Provide a focused, specific answer to this question.
                     """
 
-                    followup_response = st.session_state.chatbot.chat(followup_prompt)
+                    followup_response = st.session_state.chatbot.chat(followup_prompt) if st.session_state.get('chatbot') else None
 
                     st.markdown("##### 🤖 AI Response")
                     if followup_response and followup_response.get('success'):
@@ -829,32 +848,6 @@ def render_ai_analyzer():
                     else:
                         st.error(f"Error: {followup_response.get('error', 'Unknown error') if followup_response else 'No response'}")
 
-        # Export analysis
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("📥 Export Analysis (TXT)"):
-                analysis_text = f"""
-AI Document Analysis Report
-Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-File Analyzed: {analysis['file_name']}
-Analysis Type: {analysis['analysis_type']}
-
-ANALYSIS RESULTS:
-{analysis['analysis']}
-"""
-                st.download_button(
-                    label="📥 Download TXT Report",
-                    data=analysis_text,
-                    file_name=f"ai_analysis_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
-                    mime="text/plain"
-                )
-
-        with col2:
-            if st.button("🗑️ Clear Analysis"):
-                if 'document_analysis' in st.session_state:
-                    del st.session_state.document_analysis
-                st.rerun()
 
 def main_chatbot_page():
     """Main chatbot interface with split screen design"""
@@ -867,7 +860,8 @@ def main_chatbot_page():
 
     # Initialize chatbot
     if not initialize_chatbot():
-        st.stop()
+        # continue — initialization shows warnings; core features still usable
+        pass
 
     # Create tabs for split screen functionality
     tab1, tab2 = st.tabs(["💬 AI Retail Assistant", "📊 AI Document Analyzer"])
@@ -897,9 +891,9 @@ def main_chatbot_page():
 
     # Sidebar
     render_global_sidebar()
-    
     with st.sidebar:
         render_local_actions()
+
 
 if __name__ == "__main__":
     main_chatbot_page()
