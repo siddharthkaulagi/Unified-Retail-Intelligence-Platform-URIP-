@@ -26,3 +26,8 @@ optuna
 folium
 streamlit-folium
 geopy
+# Comment these OUT on Streamlit Cloud:
+geopandas
+fiona
+shapely
+rasterio
