@@ -19,20 +19,38 @@ st.set_page_config(page_title="Store Location GIS", page_icon="🏪", layout="wi
 # Defensive imports for GIS libs
 # -------------------------------
 HAS_FOLIUM = False
+HAS_STREAMLIT_FOLIUM = False
 HAS_GEO = False
 HAS_FIONA = False
 
-# Try to import folium and supporting libs (folium is often fine)
+# --- folium core (for map rendering) ---
 try:
     import folium
     from folium.plugins import MarkerCluster, HeatMap
-    from streamlit_folium import folium_static
     HAS_FOLIUM = True
 except Exception:
     folium = None
+    MarkerCluster = None
+    HeatMap = None
+
+# --- streamlit-folium (for embedding in Streamlit) ---
+try:
+    from streamlit_folium import folium_static
+    HAS_STREAMLIT_FOLIUM = True
+except Exception:
     folium_static = None
 
-# geopandas / shapely (heavy)
+# --- Fallback folium_static if streamlit-folium is missing ---
+if HAS_FOLIUM and not HAS_STREAMLIT_FOLIUM:
+    from streamlit.components.v1 import html as st_html
+
+    def folium_static(m, width=1200, height=800):
+        """Minimal fallback if streamlit-folium is not installed."""
+        map_html = m._repr_html_()
+        st_html(map_html, height=height, width=width)
+
+
+# geopandas / shapely (heavy; optional)
 try:
     import geopandas as gpd
     from shapely.geometry import Point
@@ -40,7 +58,7 @@ try:
 except Exception:
     gpd = None
 
-# fiona (used for KML reading)
+# fiona (used for KML reading; optional)
 try:
     import fiona
     HAS_FIONA = True
@@ -69,6 +87,7 @@ except Exception:
         st.sidebar.markdown("**Sidebar**")
         st.sidebar.info("UI components not loaded (utils.ui_components missing)")
 
+
 # -------------------------------
 # Helper: safe CSS loader relative to page file
 # -------------------------------
@@ -84,14 +103,16 @@ def load_css_for_page(page_file: str):
             with open(css_path, "r", encoding="utf-8") as f:
                 st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
         else:
-            # If there's a committed wards.geojson etc, it's fine — CSS optional
+            # CSS optional
             pass
     except Exception:
         # don't break the page if css loader fails
         pass
 
+
 # load CSS for this page
 load_css_for_page(__file__)
+
 
 # -------------------------------
 # User-facing notice for missing GIS dependencies
@@ -105,6 +126,7 @@ def gis_missing_notice():
         "2. **Use preprocessed GeoJSON/CSV**: Convert KML -> GeoJSON locally and commit `assets/wards.geojson` and `assets/wards_stats.csv` to the repo. The page will work with `folium` only.\n"
         "3. **Deploy with Docker or a host that supports system libraries** (GDAL/PROJ) for full GIS support.\n"
     )
+
 
 # -------------------------------
 # Data loader (defensive)
@@ -135,7 +157,10 @@ def load_gis_data():
             st.warning("Store datasets not found in assets or repo root. Expect limited functionality.")
             # return empty GeoDataFrames if geopandas available, else None
             if HAS_GEO:
-                empty_gdf = gpd.GeoDataFrame(columns=['name', 'address', 'latitude', 'longitude', 'brand', 'geometry'], crs="EPSG:4326")
+                empty_gdf = gpd.GeoDataFrame(
+                    columns=['name', 'address', 'latitude', 'longitude', 'brand', 'geometry'],
+                    crs="EPSG:4326"
+                )
                 return empty_gdf, empty_gdf.copy(), None, None
             else:
                 return None, None, None, None
@@ -143,8 +168,7 @@ def load_gis_data():
         reliance_df = pd.read_csv(reliance_csv)
         competitor_df = pd.read_excel(competitor_xlsx)
 
-        # Standardize minimal columns
-        # (Make these tolerant: map various possible column names)
+        # Standardize minimal columns (tolerant mapping)
         def pick_col(df, candidates, default=None):
             for c in candidates:
                 if c in df.columns:
@@ -161,8 +185,17 @@ def load_gis_data():
             reliance_df['latitude'] = pd.to_numeric(reliance_df[lat_col_r], errors='coerce')
         if lon_col_r:
             reliance_df['longitude'] = pd.to_numeric(reliance_df[lon_col_r], errors='coerce')
-        reliance_df['name'] = reliance_df[name_col_r] if name_col_r in reliance_df.columns else reliance_df.get('name', 'Reliance Store')
-        reliance_df['address'] = reliance_df[addr_col_r] if addr_col_r in reliance_df.columns else reliance_df.get('address', '')
+
+        reliance_df['name'] = (
+            reliance_df[name_col_r]
+            if name_col_r in reliance_df.columns
+            else reliance_df.get('name', 'Reliance Store')
+        )
+        reliance_df['address'] = (
+            reliance_df[addr_col_r]
+            if addr_col_r in reliance_df.columns
+            else reliance_df.get('address', '')
+        )
 
         # Competitor (KPN)
         lat_col_c = pick_col(competitor_df, ['latitude', 'lat', 'Latitude'])
@@ -174,8 +207,17 @@ def load_gis_data():
             competitor_df['latitude'] = pd.to_numeric(competitor_df[lat_col_c], errors='coerce')
         if lon_col_c:
             competitor_df['longitude'] = pd.to_numeric(competitor_df[lon_col_c], errors='coerce')
-        competitor_df['name'] = competitor_df[name_col_c] if name_col_c in competitor_df.columns else competitor_df.get('name', 'KPN Store')
-        competitor_df['address'] = competitor_df[addr_col_c] if addr_col_c in competitor_df.columns else competitor_df.get('address', '')
+
+        competitor_df['name'] = (
+            competitor_df[name_col_c]
+            if name_col_c in competitor_df.columns
+            else competitor_df.get('name', 'KPN Store')
+        )
+        competitor_df['address'] = (
+            competitor_df[addr_col_c]
+            if addr_col_c in competitor_df.columns
+            else competitor_df.get('address', '')
+        )
 
         # add brand
         reliance_df['brand'] = 'Reliance Fresh'
@@ -183,16 +225,17 @@ def load_gis_data():
 
         # create GeoDataFrames if geopandas available, else retain DataFrames
         if HAS_GEO:
+            rel_clean = reliance_df.dropna(subset=['longitude', 'latitude'])
+            comp_clean = competitor_df.dropna(subset=['longitude', 'latitude'])
+
             reliance_gdf = gpd.GeoDataFrame(
-                reliance_df.dropna(subset=['longitude', 'latitude']),
-                geometry=gpd.points_from_xy(reliance_df.dropna(subset=['longitude', 'latitude'])['longitude'],
-                                            reliance_df.dropna(subset=['longitude', 'latitude'])['latitude']),
+                rel_clean,
+                geometry=gpd.points_from_xy(rel_clean['longitude'], rel_clean['latitude']),
                 crs="EPSG:4326"
             )
             competitor_gdf = gpd.GeoDataFrame(
-                competitor_df.dropna(subset=['longitude', 'latitude']),
-                geometry=gpd.points_from_xy(competitor_df.dropna(subset=['longitude', 'latitude'])['longitude'],
-                                            competitor_df.dropna(subset=['longitude', 'latitude'])['latitude']),
+                comp_clean,
+                geometry=gpd.points_from_xy(comp_clean['longitude'], comp_clean['latitude']),
                 crs="EPSG:4326"
             )
         else:
@@ -213,20 +256,23 @@ def load_gis_data():
             if HAS_GEO:
                 wards_gdf = gpd.read_file(wards_geojson)
             else:
-                # read GeoJSON as dict for folium usage
-                wards_gdf = None
+                wards_gdf = None  # we'll use folium directly with the file
 
             wards_stats_df = pd.read_csv(wards_stats_csv)
             # ensure numeric Population column
             if 'Population' in wards_stats_df.columns:
-                wards_stats_df['Population'] = pd.to_numeric(wards_stats_df['Population'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
+                wards_stats_df['Population'] = (
+                    pd.to_numeric(
+                        wards_stats_df['Population'].astype(str).str.replace(',', ''),
+                        errors='coerce'
+                    ).fillna(0)
+                )
             return reliance_gdf, competitor_gdf, wards_gdf, wards_stats_df
 
         # If no preprocessed files, attempt to parse KML (requires fiona/geopandas)
         kml_path = assets_dir / "bbmp_final_new_wards.kml"
         csv_stats_path = assets_dir / "bbmp_wards_full_merged.csv"
         if not kml_path.exists():
-            # fallback to repo root
             kml_path = Path("bbmp_final_new_wards.kml")
         if not csv_stats_path.exists():
             csv_stats_path = Path("bbmp_wards_full_merged.csv")
@@ -239,41 +285,16 @@ def load_gis_data():
                     fiona.drvsupport.supported_drivers['KML'] = 'rw'
                 wards_gdf = gpd.read_file(kml_path, driver='KML')
 
-                # parse extended attributes via xml if present (best-effort)
-                try:
-                    import xml.etree.ElementTree as ET
-                    tree = ET.parse(kml_path)
-                    root = tree.getroot()
-                    ns = {'kml': 'http://www.opengis.net/kml/2.2'}
-                    ward_data = []
-                    for placemark in root.findall('.//kml:Placemark', ns):
-                        data = {'Ward Name': None, 'Population': 0, 'Assembly constituency': None}
-                        extended_data = placemark.find('kml:ExtendedData', ns)
-                        if extended_data is not None:
-                            schema_data = extended_data.find('kml:SchemaData', ns)
-                            if schema_data is not None:
-                                for sd in schema_data.findall('kml:SimpleData', ns):
-                                    name = sd.get('name')
-                                    value = sd.text
-                                    if name and value:
-                                        if name.lower() in ['name_en', 'ward_name', 'ward name']:
-                                            data['Ward Name'] = value
-                                        elif 'pop' in name.lower():
-                                            try:
-                                                data['Population'] = int(float(value))
-                                            except:
-                                                pass
-                                        elif 'assembly' in name.lower():
-                                            data['Assembly constituency'] = value
-                        ward_data.append(data)
-                except Exception:
-                    ward_data = []
-
                 # read CSV stats
                 if csv_stats_path.exists():
                     wards_stats_df = pd.read_csv(csv_stats_path)
                     if 'Population' in wards_stats_df.columns:
-                        wards_stats_df['Population'] = pd.to_numeric(wards_stats_df['Population'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
+                        wards_stats_df['Population'] = (
+                            pd.to_numeric(
+                                wards_stats_df['Population'].astype(str).str.replace(',', ''),
+                                errors='coerce'
+                            ).fillna(0)
+                        )
 
                     # Merge centroid coords from kml to csv stats (normalized names)
                     if 'Ward Name' in wards_gdf.columns:
@@ -282,8 +303,12 @@ def load_gis_data():
                         wards_gdf['longitude'] = wards_gdf.geometry.centroid.x
                         wards_gdf['Ward Name Clean'] = wards_gdf['Ward Name'].astype(str).str.strip().str.title()
                         wards_stats_df['Ward Name Clean'] = wards_stats_df['Ward Name'].astype(str).str.strip().str.title()
-                        wards_stats_df = pd.merge(wards_stats_df, wards_gdf[['Ward Name Clean', 'latitude', 'longitude']].drop_duplicates(),
-                                                 on='Ward Name Clean', how='left')
+                        wards_stats_df = pd.merge(
+                            wards_stats_df,
+                            wards_gdf[['Ward Name Clean', 'latitude', 'longitude']].drop_duplicates(),
+                            on='Ward Name Clean',
+                            how='left'
+                        )
                         wards_stats_df = wards_stats_df.drop(columns=['Ward Name Clean'])
                     return reliance_gdf, competitor_gdf, wards_gdf, wards_stats_df
                 else:
@@ -292,6 +317,7 @@ def load_gis_data():
             except Exception as e:
                 st.warning(f"Could not read KML with geopandas/fiona: {e}")
                 # fallback below
+
         # Nothing found or cannot parse
         st.warning("No preprocessed GeoJSON/CSV found and KML parsing not possible in this environment.")
         return reliance_gdf, competitor_gdf, None, None
@@ -300,8 +326,9 @@ def load_gis_data():
         st.error(f"Error loading GIS data: {e}")
         return None, None, None, None
 
+
 # -------------------------------
-# QGIS export helper (unchanged, but defensive)
+# QGIS export helper
 # -------------------------------
 def create_qgis_project(reliance_stores, competitor_stores, population_data,
                        recommendations=None, include_demographics=True, project_name="KPN_Fresh_GIS"):
@@ -338,7 +365,7 @@ def create_qgis_project(reliance_stores, competitor_stores, population_data,
                     geojson = {"type": "FeatureCollection", "features": features}
                     with open(path, 'w', encoding='utf-8') as f:
                         json.dump(geojson, f, indent=2)
-                except Exception as e:
+                except Exception:
                     return False
             return True
 
@@ -401,6 +428,7 @@ def create_qgis_project(reliance_stores, competitor_stores, population_data,
         st.error(f"Error creating QGIS export: {e}")
         return None, False
 
+
 # -------------------------------
 # Page UI and logic
 # -------------------------------
@@ -446,6 +474,9 @@ with tab1:
         gis_missing_notice()
         st.info("You can still view population and recommendation tabs if ward stats are present.")
     else:
+        if not HAS_GEO:
+            st.caption("Running in lightweight mode (no geopandas/fiona): using preprocessed lat/lon and GeoJSON only.")
+
         # Map controls
         col_map1, col_map2 = st.columns([2, 1])
         with col_map1:
@@ -462,9 +493,18 @@ with tab1:
             try:
                 pop_min = int(pop_df['Population'].min())
                 pop_max = int(pop_df['Population'].max())
-                pop_range = st.slider("Population Range", pop_min, pop_max, (pop_min, min(pop_max, int(pop_min + (pop_max-pop_min)/3))))
+                pop_range = st.slider(
+                    "Population Range",
+                    pop_min,
+                    pop_max,
+                    (pop_min, min(pop_max, int(pop_min + (pop_max - pop_min) / 3)))
+                )
                 buffer_distance = st.slider("Distance from Competitors (km)", 0.5, 5.0, 1.0, 0.1)
-                ward_filter = st.multiselect("Ward Types", ["High Population", "Medium Population", "Low Population"], default=["High Population", "Medium Population", "Low Population"])
+                ward_filter = st.multiselect(
+                    "Ward Types",
+                    ["High Population", "Medium Population", "Low Population"],
+                    default=["High Population", "Medium Population", "Low Population"]
+                )
             except Exception:
                 pass
 
@@ -483,13 +523,18 @@ with tab1:
             if st.session_state.get('ward_stats') is not None:
                 ward_stats = st.session_state['ward_stats'].copy()
 
-                # If wards_gdf available (with geometry), use it; otherwise if wards.geojson exists, read it into python dict and draw
                 if st.session_state.get('population_data') is not None and HAS_GEO and isinstance(st.session_state['population_data'], gpd.GeoDataFrame):
                     wards_geo = st.session_state['population_data']
-                    wards_geo['Population'] = pd.to_numeric(wards_geo.get('Population', ward_stats.get('Population', 0)), errors='coerce').fillna(0)
-                    # Filter by pop_range if provided
-                    wards_geo = wards_geo[(wards_geo['Population'] >= pop_range[0]) & (wards_geo['Population'] <= pop_range[1])]
-                    # Add GeoJson
+                    wards_geo['Population'] = pd.to_numeric(
+                        wards_geo.get('Population', ward_stats.get('Population', 0)),
+                        errors='coerce'
+                    ).fillna(0)
+                    # Filter by pop_range
+                    wards_geo = wards_geo[
+                        (wards_geo['Population'] >= pop_range[0]) &
+                        (wards_geo['Population'] <= pop_range[1])
+                    ]
+                    # Add GeoJson with colormap
                     try:
                         import branca.colormap as cm
                         pop_min = ward_stats['Population'].min()
@@ -503,8 +548,10 @@ with tab1:
                                 'weight': 0.7,
                                 'fillOpacity': 0.5
                             },
-                            tooltip=folium.GeoJsonTooltip(fields=['Ward Name', 'Population', 'Assembly constituency'],
-                                                          aliases=['Ward:', 'Population:', 'Assembly:'])
+                            tooltip=folium.GeoJsonTooltip(
+                                fields=['Ward Name', 'Population', 'Assembly constituency'],
+                                aliases=['Ward:', 'Population:', 'Assembly:']
+                            )
                         ).add_to(m)
                         colormap.caption = "Ward Population"
                         colormap.add_to(m)
@@ -523,13 +570,16 @@ with tab1:
             # Add reliance markers (blue)
             if st.session_state.get('reliance_stores') is not None:
                 rel = st.session_state['reliance_stores']
-                # support both GeoDataFrame and plain DataFrame
                 if HAS_GEO and isinstance(rel, gpd.GeoDataFrame):
                     for _, row in rel.iterrows():
                         lat = row.geometry.y
                         lon = row.geometry.x
                         popup = f"<b>{row.get('name','Reliance')}</b><br>{row.get('address','')}"
-                        folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='blue', icon='shopping-cart', prefix='fa')).add_to(m)
+                        folium.Marker(
+                            [lat, lon],
+                            popup=popup,
+                            icon=folium.Icon(color='blue', icon='shopping-cart', prefix='fa')
+                        ).add_to(m)
                 else:
                     for _, row in rel.iterrows():
                         lat = row.get('latitude')
@@ -537,7 +587,11 @@ with tab1:
                         if pd.isna(lat) or pd.isna(lon):
                             continue
                         popup = f"<b>{row.get('name','Reliance')}</b><br>{row.get('address','')}"
-                        folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='blue', icon='shopping-cart', prefix='fa')).add_to(m)
+                        folium.Marker(
+                            [lat, lon],
+                            popup=popup,
+                            icon=folium.Icon(color='blue', icon='shopping-cart', prefix='fa')
+                        ).add_to(m)
 
             # Add competitor (KPN) markers (red) and buffer circles
             if st.session_state.get('competitor_stores') is not None:
@@ -547,8 +601,18 @@ with tab1:
                         lat = row.geometry.y
                         lon = row.geometry.x
                         popup = f"<b>{row.get('name','KPN')}</b><br>{row.get('address','')}"
-                        folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='red', icon='store', prefix='fa')).add_to(m)
-                        folium.Circle([lat, lon], radius=buffer_distance * 1000, color='red', fill=True, fill_opacity=0.08).add_to(m)
+                        folium.Marker(
+                            [lat, lon],
+                            popup=popup,
+                            icon=folium.Icon(color='red', icon='store', prefix='fa')
+                        ).add_to(m)
+                        folium.Circle(
+                            [lat, lon],
+                            radius=buffer_distance * 1000,
+                            color='red',
+                            fill=True,
+                            fill_opacity=0.08
+                        ).add_to(m)
                 else:
                     for _, row in comp.iterrows():
                         lat = row.get('latitude')
@@ -556,13 +620,24 @@ with tab1:
                         if pd.isna(lat) or pd.isna(lon):
                             continue
                         popup = f"<b>{row.get('name','KPN')}</b><br>{row.get('address','')}"
-                        folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='red', icon='store', prefix='fa')).add_to(m)
-                        folium.Circle([lat, lon], radius=buffer_distance * 1000, color='red', fill=True, fill_opacity=0.08).add_to(m)
+                        folium.Marker(
+                            [lat, lon],
+                            popup=popup,
+                            icon=folium.Icon(color='red', icon='store', prefix='fa')
+                        ).add_to(m)
+                        folium.Circle(
+                            [lat, lon],
+                            radius=buffer_distance * 1000,
+                            color='red',
+                            fill=True,
+                            fill_opacity=0.08
+                        ).add_to(m)
 
             folium.LayerControl().add_to(m)
             folium_static(m, width=1200, height=800)
         except Exception as e:
             st.error(f"Error creating map: {e}")
+
 
 # -------------------------------
 # Tab 2: Population Intelligence
@@ -575,7 +650,10 @@ with tab2:
 
         # ensure Population numeric
         if 'Population' in pop_df.columns:
-            pop_df['Population'] = pd.to_numeric(pop_df['Population'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
+            pop_df['Population'] = pd.to_numeric(
+                pop_df['Population'].astype(str).str.replace(',', ''),
+                errors='coerce'
+            ).fillna(0)
 
         col1, col2, col3, col4 = st.columns(4)
         with col1:
@@ -584,12 +662,18 @@ with tab2:
             st.metric("Average Ward Population", f"{int(pop_df['Population'].mean()):,}")
         with col3:
             try:
-                st.metric("Highest Ward Population", pop_df.loc[pop_df['Population'].idxmax(), 'Ward Name'])
+                st.metric(
+                    "Highest Ward Population",
+                    pop_df.loc[pop_df['Population'].idxmax(), 'Ward Name']
+                )
             except Exception:
                 st.metric("Highest Ward Population", "N/A")
         with col4:
             try:
-                st.metric("Lowest Ward Population", pop_df.loc[pop_df['Population'].idxmin(), 'Ward Name'])
+                st.metric(
+                    "Lowest Ward Population",
+                    pop_df.loc[pop_df['Population'].idxmin(), 'Ward Name']
+                )
             except Exception:
                 st.metric("Lowest Ward Population", "N/A")
 
@@ -600,30 +684,65 @@ with tab2:
             import plotly.express as px
             pop_values = pop_df['Population'].values
             try:
-                fig = ff.create_distplot([pop_values], ['Population'], show_hist=True, show_rug=False, bin_size=1000)
-                fig.update_layout(title="Population Distribution Across Wards", xaxis_title="Population", yaxis_title="Density")
+                fig = ff.create_distplot(
+                    [pop_values],
+                    ['Population'],
+                    show_hist=True,
+                    show_rug=False,
+                    bin_size=1000
+                )
+                fig.update_layout(
+                    title="Population Distribution Across Wards",
+                    xaxis_title="Population",
+                    yaxis_title="Density"
+                )
             except Exception:
-                fig = px.histogram(pop_df, x='Population', nbins=20, title="Population Distribution (Histogram)")
+                fig = px.histogram(
+                    pop_df,
+                    x='Population',
+                    nbins=20,
+                    title="Population Distribution (Histogram)"
+                )
             st.plotly_chart(fig, use_container_width=True)
 
         with col_chart2:
             st.markdown("#### Population by Assembly Constituency")
             try:
-                constituency_pop = pop_df.groupby('Assembly constituency')['Population'].sum().sort_values(ascending=False)
-                fig = px.bar(x=constituency_pop.index, y=constituency_pop.values, title="Population by Assembly Constituency", labels={'x': 'Assembly', 'y': 'Population'})
+                constituency_pop = (
+                    pop_df.groupby('Assembly constituency')['Population']
+                    .sum()
+                    .sort_values(ascending=False)
+                )
+                fig = px.bar(
+                    x=constituency_pop.index,
+                    y=constituency_pop.values,
+                    title="Population by Assembly Constituency",
+                    labels={'x': 'Assembly', 'y': 'Population'}
+                )
                 fig.update_xaxes(tickangle=45)
                 st.plotly_chart(fig, use_container_width=True)
             except Exception:
                 st.info("Assembly constituency data not available or malformed.")
+
         st.markdown("---")
         st.markdown("#### Top 10 Most Populated Wards")
         try:
-            top_wards = pop_df.nlargest(10, 'Population')[['Ward Name', 'Population', 'Assembly constituency']].reset_index(drop=True)
+            top_wards = (
+                pop_df.nlargest(10, 'Population')[
+                    ['Ward Name', 'Population', 'Assembly constituency']
+                ]
+                .reset_index(drop=True)
+            )
             st.dataframe(top_wards, use_container_width=True)
         except Exception:
             st.info("Cannot compute top wards.")
     else:
-        st.info("Population ward stats not available. Upload or commit `assets/bbmp_wards_full_merged.csv` (or preprocessed ward file) to enable this tab.")
+        st.info(
+            "Population ward stats not available. "
+            "Upload or commit `assets/bbmp_wards_full_merged.csv` "
+            "(or preprocessed ward file) to enable this tab."
+        )
+
 
 # -------------------------------
 # Tab 3: Recommendations
@@ -638,27 +757,60 @@ with tab3:
         st.session_state.get('ward_stats') is not None
     ])
     if not has_required:
-        st.info("Load competitor, reliance and ward stats to generate recommendations. Use preprocessed assets for cloud deployments.")
+        st.info(
+            "Load competitor, reliance and ward stats to generate recommendations. "
+            "Use preprocessed assets for cloud deployments."
+        )
         if not HAS_GEO:
-            st.caption("Tip: Commit assets/wards.geojson and assets/bbmp_wards_full_merged.csv to avoid heavy geopandas dependencies on the host.")
+            st.caption(
+                "Tip: Commit assets/wards.geojson and assets/bbmp_wards_full_merged.csv "
+                "to avoid heavy geopandas dependencies on the host."
+            )
     else:
         # controls
         col_controls1, col_controls2, col_controls3 = st.columns(3)
         with col_controls1:
-            target_locations = st.number_input("Number of Recommendations", 5, 50, 10)
+            target_locations = st.number_input(
+                "Number of Recommendations",
+                5,
+                50,
+                10
+            )
         with col_controls2:
-            min_distance_choice = st.selectbox("Minimum Distance from Reliance Fresh", ["500m", "1km", "2km", "Custom"], index=1)
+            min_distance_choice = st.selectbox(
+                "Minimum Distance from Reliance Fresh",
+                ["500m", "1km", "2km", "Custom"],
+                index=1
+            )
             if min_distance_choice == "Custom":
-                min_distance_km = st.slider("Custom Distance (km)", 0.2, 5.0, 1.0, 0.1)
+                min_distance_km = st.slider(
+                    "Custom Distance (km)",
+                    0.2,
+                    5.0,
+                    1.0,
+                    0.1
+                )
             else:
                 if 'm' in min_distance_choice:
                     min_distance_km = float(min_distance_choice.replace('m', '')) / 1000.0
                 else:
                     min_distance_km = float(min_distance_choice.replace('km', ''))
         with col_controls3:
-            roi_weight = st.slider("ROI Focus (Population vs Distance)", 0, 100, 50)
+            roi_weight = st.slider(
+                "ROI Focus (Population vs Distance)",
+                0,
+                100,
+                50
+            )
 
-        def generate_location_recommendations_local(competitor_stores, reliance_stores, ward_stats, num_locations=10, min_distance_km=1.0, roi_weight=50):
+        def generate_location_recommendations_local(
+            competitor_stores,
+            reliance_stores,
+            ward_stats,
+            num_locations=10,
+            min_distance_km=1.0,
+            roi_weight=50
+        ):
             from geopy.distance import geodesic
             recommendations = []
 
@@ -690,13 +842,19 @@ with tab3:
                     ward_lng = ward.get('longitude') or ward.get('lng') or None
                     if not ward_lat or not ward_lng or pd.isna(ward_lat) or pd.isna(ward_lng):
                         continue
+
                     # nearest reliance distance
-                    distances = [geodesic((ward_lat, ward_lng), (lat, lng)).km for lat, lng, _ in reliance_coords] if reliance_coords else [10.0]
+                    distances = [
+                        geodesic((ward_lat, ward_lng), (lat, lng)).km
+                        for lat, lng, _ in reliance_coords
+                    ] if reliance_coords else [10.0]
                     nearest_rel = min(distances) if distances else 10.0
                     if nearest_rel < min_distance_km:
                         continue
+
                     pop_ratio = pop / ward_stats['Population'].max()
                     population_score = pop_ratio * 40
+
                     if nearest_rel < 0.5:
                         distance_score = 10
                     elif nearest_rel < 1.0:
@@ -707,15 +865,31 @@ with tab3:
                         distance_score = 25
                     else:
                         distance_score = 15
-                    center_distance = geodesic((ward_lat, ward_lng), (12.9716, 77.5946)).km
+
+                    center_distance = geodesic(
+                        (ward_lat, ward_lng),
+                        (12.9716, 77.5946)
+                    ).km
                     accessibility_score = max(5, 20 - center_distance * 2)
+
                     socio_score = 5
-                    total_score = (population_score * (roi_weight/100) + distance_score * ((100-roi_weight)/100) + accessibility_score * 0.2 + socio_score * 0.1)
+                    total_score = (
+                        population_score * (roi_weight / 100)
+                        + distance_score * ((100 - roi_weight) / 100)
+                        + accessibility_score * 0.2
+                        + socio_score * 0.1
+                    )
+
                     # nearby competitors within 2km
-                    nearby_comp = sorted([
-                        (lat, lng, name) for lat, lng, name in reliance_coords
-                        if geodesic((ward_lat, ward_lng), (lat, lng)).km <= 2.0
-                    ], key=lambda x: geodesic((ward_lat, ward_lng), (x[0], x[1])).km)[:3]
+                    nearby_comp = sorted(
+                        [
+                            (lat, lng, name)
+                            for lat, lng, name in reliance_coords
+                            if geodesic((ward_lat, ward_lng), (lat, lng)).km <= 2.0
+                        ],
+                        key=lambda x: geodesic((ward_lat, ward_lng), (x[0], x[1])).km
+                    )[:3]
+
                     recommendations.append({
                         'ward_name': ward.get('Ward Name', ward.get('Ward', 'Unknown')),
                         'assembly': ward.get('Assembly constituency', ward.get('Assembly', 'Unknown')),
@@ -750,7 +924,10 @@ with tab3:
                     st.session_state['gis_recommendations'] = recs
                     st.success(f"✅ Generated {len(recs)} recommendations.")
                 else:
-                    st.warning("No locations found with the current criteria. Try relaxing filters.")
+                    st.warning(
+                        "No locations found with the current criteria. "
+                        "Try relaxing filters."
+                    )
 
         if 'gis_recommendations' in st.session_state and st.session_state['gis_recommendations']:
             st.markdown("#### 🥇 Top Recommendations")
@@ -760,13 +937,27 @@ with tab3:
                     with col_a:
                         st.write(f"**Ward:** {rec['ward_name']} ({rec['assembly']})")
                         st.write(f"**Population:** {rec['population']:,}")
-                        st.write(f"**Distance to nearest Reliance:** {rec['nearest_competitor_km']:.2f} km")
+                        st.write(
+                            f"**Distance to nearest Reliance:** "
+                            f"{rec['nearest_competitor_km']:.2f} km"
+                        )
                     with col_b:
                         if HAS_FOLIUM:
-                            mini_map = folium.Map(location=[rec['lat'], rec['lng']], zoom_start=13)
-                            folium.Marker([rec['lat'], rec['lng']], popup=f"Recommended: {rec['ward_name']}", icon=folium.Icon(color='green', icon='star', prefix='fa')).add_to(mini_map)
+                            mini_map = folium.Map(
+                                location=[rec['lat'], rec['lng']],
+                                zoom_start=13
+                            )
+                            folium.Marker(
+                                [rec['lat'], rec['lng']],
+                                popup=f"Recommended: {rec['ward_name']}",
+                                icon=folium.Icon(color='green', icon='star', prefix='fa')
+                            ).add_to(mini_map)
                             for comp in rec.get('nearby_competitors', [])[:3]:
-                                folium.Marker([comp[0], comp[1]], popup=f"Competitor: {comp[2]}", icon=folium.Icon(color='blue', icon='shopping-cart', prefix='fa')).add_to(mini_map)
+                                folium.Marker(
+                                    [comp[0], comp[1]],
+                                    popup=f"Competitor: {comp[2]}",
+                                    icon=folium.Icon(color='blue', icon='shopping-cart', prefix='fa')
+                                ).add_to(mini_map)
                             folium_static(mini_map, width=300, height=200)
                         else:
                             st.write("Map preview requires folium (not available in this environment).")
@@ -777,24 +968,53 @@ with tab3:
                     df_export = pd.DataFrame(st.session_state['gis_recommendations'])
                     output = io.BytesIO()
                     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        df_export.to_excel(writer, index=False, sheet_name='Recommendations')
+                        df_export.to_excel(
+                            writer,
+                            index=False,
+                            sheet_name='Recommendations'
+                        )
                         # add simple stats sheet
                         stats = {
-                            'Metric': ['Total Population Covered', 'KPN Stores', 'Reliance Stores'],
-                            'Value': [int(st.session_state['ward_stats']['Population'].sum()), len(st.session_state['competitor_stores']), len(st.session_state['reliance_stores'])]
+                            'Metric': [
+                                'Total Population Covered',
+                                'KPN Stores',
+                                'Reliance Stores'
+                            ],
+                            'Value': [
+                                int(st.session_state['ward_stats']['Population'].sum()),
+                                len(st.session_state['competitor_stores']),
+                                len(st.session_state['reliance_stores'])
+                            ]
                         }
-                        pd.DataFrame(stats).to_excel(writer, index=False, sheet_name='Stats')
-                    st.download_button("Download Excel", data=output.getvalue(), file_name=f"kpn_recommendations_{datetime.now().strftime('%Y%m%d')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                        pd.DataFrame(stats).to_excel(
+                            writer,
+                            index=False,
+                            sheet_name='Stats'
+                        )
+                    st.download_button(
+                        "Download Excel",
+                        data=output.getvalue(),
+                        file_name=f"kpn_recommendations_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
                 except Exception as e:
                     st.error(f"Export failed: {e}")
+
 
 # -------------------------------
 # Tab 4: Analysis dashboard
 # -------------------------------
 with tab4:
     st.markdown("### 📈 Network Analysis & Performance Dashboard")
-    if st.session_state.get('reliance_stores') is None or st.session_state.get('competitor_stores') is None or st.session_state.get('population_data') is None:
-        st.info("GIS data incomplete. Use preprocessed assets or run locally with geopandas for full analysis.")
+    if (
+        st.session_state.get('reliance_stores') is None
+        or st.session_state.get('competitor_stores') is None
+        or st.session_state.get('population_data') is None
+    ):
+        st.info(
+            "GIS data incomplete. Use preprocessed assets or run locally with geopandas "
+            "for full analysis."
+        )
     else:
         try:
             # Compute some simple KPIs
@@ -807,45 +1027,67 @@ with tab4:
             col1, col2 = st.columns(2)
             with col1:
                 import plotly.express as px
-                fig = px.pie(values=[kpn_share, reliance_share], names=['KPN Fresh', 'Reliance Fresh'], title="Market Share by Store Count")
+                fig = px.pie(
+                    values=[kpn_share, reliance_share],
+                    names=['KPN Fresh', 'Reliance Fresh'],
+                    title="Market Share by Store Count"
+                )
                 st.plotly_chart(fig, use_container_width=True)
-            with col2:
-                # distance distributions
-                from geopy.distance import geodesic
-                # get coords lists
-                def coords_list(obj):
-                    coords = []
-                    if HAS_GEO and isinstance(obj, gpd.GeoDataFrame):
-                        for _, r in obj.iterrows():
-                            coords.append((r.geometry.y, r.geometry.x))
-                    else:
-                        for _, r in obj.iterrows():
-                            lat = r.get('latitude'); lon = r.get('longitude')
-                            if pd.isna(lat) or pd.isna(lon): continue
-                            coords.append((float(lat), float(lon)))
-                    return coords
-                kpn_coords = coords_list(st.session_state['competitor_stores'])
-                reliance_coords = coords_list(st.session_state['reliance_stores'])
-                kpn_distances = []
-                for i in range(len(kpn_coords)):
-                    for j in range(i+1, len(kpn_coords)):
-                        try:
-                            kpn_distances.append(geodesic(kpn_coords[i], kpn_coords[j]).km)
-                        except Exception:
-                            pass
-                cross_distances = []
-                for kc in kpn_coords:
+
+            from geopy.distance import geodesic
+
+            def coords_list(obj):
+                coords = []
+                if HAS_GEO and isinstance(obj, gpd.GeoDataFrame):
+                    for _, r in obj.iterrows():
+                        coords.append((r.geometry.y, r.geometry.x))
+                else:
+                    for _, r in obj.iterrows():
+                        lat = r.get('latitude')
+                        lon = r.get('longitude')
+                        if pd.isna(lat) or pd.isna(lon):
+                            continue
+                        coords.append((float(lat), float(lon)))
+                return coords
+
+            kpn_coords = coords_list(st.session_state['competitor_stores'])
+            reliance_coords = coords_list(st.session_state['reliance_stores'])
+
+            kpn_distances = []
+            for i in range(len(kpn_coords)):
+                for j in range(i + 1, len(kpn_coords)):
                     try:
-                        nearest = min([geodesic(kc, rc).km for rc in reliance_coords]) if reliance_coords else 0
-                        cross_distances.append(nearest)
+                        kpn_distances.append(
+                            geodesic(kpn_coords[i], kpn_coords[j]).km
+                        )
                     except Exception:
                         pass
+
+            cross_distances = []
+            for kc in kpn_coords:
+                try:
+                    nearest = min(
+                        [geodesic(kc, rc).km for rc in reliance_coords]
+                    ) if reliance_coords else 0
+                    cross_distances.append(nearest)
+                except Exception:
+                    pass
+
+            with col2:
                 col_a, col_b = st.columns(2)
                 with col_a:
-                    fig1 = px.histogram(kpn_distances, nbins=20, title="KPN Store-to-Store Distances")
+                    fig1 = px.histogram(
+                        kpn_distances,
+                        nbins=20,
+                        title="KPN Store-to-Store Distances"
+                    )
                     st.plotly_chart(fig1, use_container_width=True)
                 with col_b:
-                    fig2 = px.histogram(cross_distances, nbins=15, title="KPN to Nearest Reliance")
+                    fig2 = px.histogram(
+                        cross_distances,
+                        nbins=15,
+                        title="KPN to Nearest Reliance"
+                    )
                     st.plotly_chart(fig2, use_container_width=True)
 
             st.markdown("---")
@@ -858,11 +1100,25 @@ with tab4:
                 avg_cross = np.mean(cross_distances) if cross_distances else 0
                 st.metric("Avg Dist to Reliance", f"{avg_cross:.2f} km")
             with colk3:
-                pop_total = st.session_state['ward_stats']['Population'].sum() if st.session_state.get('ward_stats') is not None else 0
+                pop_total = (
+                    st.session_state['ward_stats']['Population'].sum()
+                    if st.session_state.get('ward_stats') is not None
+                    else 0
+                )
                 est_pop_per_store = pop_total / max(kpn_count, 1)
-                st.metric("Est. Population per KPN Store", f"{int(est_pop_per_store):,}")
+                st.metric(
+                    "Est. Population per KPN Store",
+                    f"{int(est_pop_per_store):,}"
+                )
             with colk4:
-                ward_high = len([w for _, w in st.session_state['population_data'].iterrows() if w.get('Population', 0) > 30000]) if st.session_state.get('population_data') is not None else 0
+                if st.session_state.get('population_data') is not None:
+                    ward_high = len([
+                        w
+                        for _, w in st.session_state['population_data'].iterrows()
+                        if w.get('Population', 0) > 30000
+                    ])
+                else:
+                    ward_high = 0
                 coverage_ratio = min((kpn_count / max(ward_high, 1) * 100), 100)
                 st.metric("KPN High-Density Coverage", f"{coverage_ratio:.1f}%")
         except Exception as e:
@@ -870,4 +1126,7 @@ with tab4:
 
 # Footer
 st.markdown("---")
-st.markdown("**KPN Fresh GIS Analytics Dashboard** — use preprocessed GeoJSON/CSV for cloud deploys, or run locally with conda for full GIS support.")
+st.markdown(
+    "**KPN Fresh GIS Analytics Dashboard** — use preprocessed GeoJSON/CSV for cloud deploys, "
+    "or run locally with conda for full GIS support."
+)
