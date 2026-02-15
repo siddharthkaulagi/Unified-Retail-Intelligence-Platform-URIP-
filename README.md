@@ -6,6 +6,7 @@
 The **Unified Retail Intelligence Platform (URIP)** is a Machine Learning–driven retail supply chain optimization system designed to support forecasting, planning, and strategic decision-making.
 
 It integrates demand forecasting, geospatial analytics, inventory optimization, and customer intelligence into a single unified platform, helping retailers transform raw data into actionable insights.
+<img width="1877" height="797" alt="image" src="https://github.com/user-attachments/assets/3add85dd-0653-4dbf-a666-b510ccfa7139" />
 
 ---
 
