@@ -10,8 +10,8 @@ It integrates demand forecasting, geospatial analytics, inventory optimization, 
 ---
 
 ## 🖥️ Platform Landing Page
+<img width="1877" height="797" alt="image" src="https://github.com/user-attachments/assets/c4dad211-953e-4a39-b62d-bfb0ec6dda60" />
 
-<img width="1907" height="858" alt="image" src="https://github.com/user-attachments/assets/fd39c542-8185-4d3b-8c47-40f9d57d489f" 
 
 ---
 
