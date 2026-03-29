@@ -1,5 +1,7 @@
 
 # Unified Retail Intelligence Platform (URIP)
+visit: https://ezka6yaugf2sn7vkfbbbts.streamlit.app/
+visit : https://unified-retail-intelligence-platform-urip.onrender.com/
 
 ## 📌 Overview
 
